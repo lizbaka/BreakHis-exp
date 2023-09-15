@@ -23,7 +23,7 @@ def main():
             [
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,), (0.5,)),
-                transforms.Resize((224, 224), antialias=True)
+                transforms.Resize((460, 700), antialias=True)
             ]
         )
     criterion = nn.CrossEntropyLoss()
@@ -44,7 +44,7 @@ def main():
             print('Finished Training in time: %.5f s' % (T2-T1))
             
             torch.save(net.state_dict(), os.path.join(ckpt_path, task.name, f'fold{fold}.pth'))
-            df = pd.DataFrame({'step':[(i + 1) * step for i in range(loss_list)], 'loss':loss_list, 'acc':acc_list})
+            df = pd.DataFrame({'step':[(i + 1) * step for i in range(len(loss_list))], 'loss':loss_list, 'acc':acc_list})
             df.to_csv(os.path.join(training_log_path, task.name, f'fold{fold}.csv'), index=True)
 
             test_dataset = task.dataset_class(dataset_root, fold_csv_path, fold=fold, group='test', transform=data_transform)

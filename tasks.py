@@ -18,16 +18,16 @@ task_list = [
     task(name = 'ResNet50-bin', 
          net = networks.ResNet50(num_classes=2), 
          dataset_class = dataset.BreakHis_csv_binary, 
-         batch_size = 48, 
-         epoch = 3, 
+         batch_size = 32, 
+         epoch = 10, 
          AdamW_lr = 0.001,
          AdamW_weight_decay = 0.0001),
 
     task(name = 'ResNet50-sub', 
          net = networks.ResNet50(num_classes=8), 
          dataset_class = dataset.BreakHis_csv_subtype, 
-         batch_size = 48, 
-         epoch = 3, 
+         batch_size = 32, 
+         epoch = 10, 
          AdamW_lr = 0.001,
          AdamW_weight_decay = 0.0001)
          
