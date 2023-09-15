@@ -7,7 +7,6 @@ MarkupSafe==2.1.2
 mpmath==1.2.1
 networkx==3.0
 numpy==1.24.1
-opencv-python==4.8.0.76
 pandas==2.1.0
 Pillow==9.3.0
 python-dateutil==2.8.2
