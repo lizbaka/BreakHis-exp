@@ -8,10 +8,15 @@ mpmath==1.2.1
 networkx==3.0
 numpy==1.24.1
 opencv-python==4.8.0.76
+pandas==2.1.0
 Pillow==9.3.0
+python-dateutil==2.8.2
+pytz==2023.3.post1
 requests==2.28.1
+six==1.16.0
 sympy==1.11.1
 torch==2.0.1+cu117
 torchvision==0.15.2+cu117
 typing_extensions==4.4.0
+tzdata==2023.3
 urllib3==1.26.13
