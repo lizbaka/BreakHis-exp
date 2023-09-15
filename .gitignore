@@ -1,6 +1,12 @@
 dataset/*
-!dataset/README.md
+results/*
+training_log/*
 *.pth
+
+
+!dataset/README.md
+!results/README.md
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
