@@ -1,12 +1,14 @@
-dataset/*
-results/*
-training_log/*
+/ckpt/*
+/dataset/*
+/results/*
+/training_log/*
+/runs
+
 *.pth
+/tasks.py
 
-tasks.py
-
-!dataset/README.md
-!results/README.md
+!/dataset/README.md
+!/results/README.md
 
 
 # Byte-compiled / optimized / DLL files

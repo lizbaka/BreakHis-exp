@@ -4,7 +4,7 @@ import torch
 import pandas as pd
 from torch import nn, optim
 from torchvision import transforms
-from sklearn.metrics import confusion_matrix
+from torchmetrics.classification import MulticlassConfusionMatrix
 
 from train import do_train
 from test import do_test
@@ -33,26 +33,30 @@ def main():
         os.makedirs(os.path.join(training_log_path, task.name), exist_ok=True)
         os.makedirs(os.path.join(results_path, task.name), exist_ok=True)
         
-        net = task.net
-        optimizer = optim.AdamW(net.parameters(), lr=task.AdamW_lr, weight_decay=task.AdamW_weight_decay)
         for fold in range(1, 6):
+            # initialize model from a network class every time
+            model = task.net_class(task.num_classes)
+            optimizer = optim.AdamW(model.parameters(), lr=task.AdamW_lr, weight_decay=task.AdamW_weight_decay)
+
             train_dataset = task.dataset_class(dataset_root, fold_csv_path, fold=fold, group='train', transform=data_transform)
             train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=task.batch_size, shuffle=True)
+            test_dataset = task.dataset_class(dataset_root, fold_csv_path, fold=fold, group='test', transform=data_transform)
+            test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=task.batch_size, shuffle=False)
+
             T1 = time.time()
-            step, loss_list, acc_list = do_train(net, train_loader, criterion, optimizer, task.epoch, task.batch_size)
+            loss_list, f1_list = do_train(model, train_loader, criterion, optimizer, task.epoch, task.batch_size, test_loader = test_loader)
             T2 = time.time()
             print('Finished Training in time: %.5f s' % (T2-T1))
             
-            torch.save(net.state_dict(), os.path.join(ckpt_path, task.name, f'fold{fold}.pth'))
-            df = pd.DataFrame({'step':[(i + 1) * step for i in range(len(loss_list))], 'loss':loss_list, 'acc':acc_list})
-            df.to_csv(os.path.join(training_log_path, task.name, f'fold{fold}.csv'), index=True)
+            torch.save(model.state_dict(), os.path.join(ckpt_path, task.name, f'fold{fold}.pth'))
+            df = pd.DataFrame({'step':[(i + 1) * task.batch_size for i in range(len(loss_list))], 'loss':loss_list, 'f1':f1_list})
+            df.to_csv(os.path.join(training_log_path, task.name, f'fold{fold}.csv'), index = False)
 
-            test_dataset = task.dataset_class(dataset_root, fold_csv_path, fold=fold, group='test', transform=data_transform)
-            test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=task.batch_size, shuffle=False)
-            label_all, pred_all = do_test(net, test_loader, os.path.join(ckpt_path, task.name, f'fold{fold}.pth'))
-            cf_mat = confusion_matrix(label_all, pred_all)
+            label_all, pred_all = do_test(model, test_loader, os.path.join(ckpt_path, task.name, f'fold{fold}.pth'))
+            confmat_metric = MulticlassConfusionMatrix(num_classes = task.num_classes)
+            cf_mat = confmat_metric(torch.tensor(label_all), torch.tensor(pred_all))
             with open(os.path.join(results_path, task.name, f'fold{fold}.txt'), 'w') as f:
-                f.write(str(cf_mat))
+                f.write(str(cf_mat.numpy()))
             
 
 

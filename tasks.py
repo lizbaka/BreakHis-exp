@@ -3,9 +3,10 @@ import dataset
 
 class task:
 
-    def __init__(self, name, net, dataset_class, batch_size, epoch, AdamW_lr, AdamW_weight_decay):
+    def __init__(self, name, num_classes, net_class, dataset_class, batch_size, epoch, AdamW_lr, AdamW_weight_decay):
         self.name = name
-        self.net = net
+        self.num_classes = num_classes
+        self.net_class = net_class
         self.dataset_class = dataset_class
         self.batch_size = batch_size
         self.epoch = epoch
@@ -16,7 +17,8 @@ class task:
 task_list = [
 
     task(name = 'ResNet50-bin', 
-         net = networks.ResNet50(num_classes=2), 
+         num_classes = 2, 
+         net_class = networks.ResNet50, 
          dataset_class = dataset.BreakHis_csv_binary, 
          batch_size = 32, 
          epoch = 10, 
@@ -24,7 +26,8 @@ task_list = [
          AdamW_weight_decay = 0.0001),
 
     task(name = 'ResNet50-sub', 
-         net = networks.ResNet50(num_classes=8), 
+         num_classes = 8, 
+         net_class = networks.ResNet50, 
          dataset_class = dataset.BreakHis_csv_subtype, 
          batch_size = 32, 
          epoch = 10, 

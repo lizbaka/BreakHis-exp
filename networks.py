@@ -6,9 +6,9 @@ import torchvision.models as models
 class ResNet50(nn.Module):
     def __init__(self, num_classes):
         super(ResNet50, self).__init__()
+        self.num_classes = num_classes
         
-        # 加载预训练的ResNet-50模型
-        self.resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+        self.resnet = models.resnet50(weights=None)
         
         # 替换最后一层全连接层
         num_features = self.resnet.fc.in_features
