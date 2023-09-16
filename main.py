@@ -1,7 +1,6 @@
 import os
 import time
 import torch
-import pandas as pd
 from torch import nn, optim
 from torchvision import transforms
 from torchmetrics.classification import MulticlassConfusionMatrix
@@ -13,7 +12,6 @@ from tasks import task_list
 
 dataset_root = './dataset/BreaKHis_v1/'
 fold_csv_path = './dataset/BreaKHis_v1/Folds.csv'
-training_log_path = './training_log/'
 ckpt_path = './ckpt/'
 results_path = './results/'
 
@@ -30,7 +28,6 @@ def main():
 
     for task in task_list:
         os.makedirs(os.path.join(ckpt_path, task.name), exist_ok=True)
-        os.makedirs(os.path.join(training_log_path, task.name), exist_ok=True)
         os.makedirs(os.path.join(results_path, task.name), exist_ok=True)
         
         for fold in range(1, 6):
@@ -44,13 +41,11 @@ def main():
             test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=task.batch_size, shuffle=False)
 
             T1 = time.time()
-            loss_list, f1_list = do_train(model, train_loader, criterion, optimizer, task.epoch, task.batch_size, test_loader = test_loader)
+            do_train(model, train_loader, criterion, optimizer, task.epoch, task.batch_size, test_loader = test_loader)
             T2 = time.time()
             print('Finished Training in time: %.5f s' % (T2-T1))
             
             torch.save(model.state_dict(), os.path.join(ckpt_path, task.name, f'fold{fold}.pth'))
-            df = pd.DataFrame({'step':[(i + 1) * task.batch_size for i in range(len(loss_list))], 'loss':loss_list, 'f1':f1_list})
-            df.to_csv(os.path.join(training_log_path, task.name, f'fold{fold}.csv'), index = False)
 
             label_all, pred_all = do_test(model, test_loader, os.path.join(ckpt_path, task.name, f'fold{fold}.pth'))
             confmat_metric = MulticlassConfusionMatrix(num_classes = task.num_classes)

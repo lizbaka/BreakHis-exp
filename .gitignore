@@ -1,7 +1,6 @@
 /ckpt/*
 /dataset/*
 /results/*
-/training_log/*
 /runs
 
 *.pth

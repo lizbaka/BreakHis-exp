@@ -21,7 +21,7 @@ task_list = [
          net_class = networks.ResNet50, 
          dataset_class = dataset.BreakHis_csv_binary, 
          batch_size = 32, 
-         epoch = 10, 
+         epoch = 2, 
          AdamW_lr = 0.001,
          AdamW_weight_decay = 0.0001),
 
