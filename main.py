@@ -21,6 +21,7 @@ def main():
             [
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,), (0.5,)),
+                # transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)), # ImageNet
                 transforms.Resize((460, 700), antialias=True)
             ]
         )
@@ -52,6 +53,8 @@ def main():
             cf_mat = confmat_metric(torch.tensor(label_all), torch.tensor(pred_all))
             with open(os.path.join(results_path, task.name, f'fold{fold}.txt'), 'w') as f:
                 f.write(str(cf_mat.numpy()))
+            with open(os.path.join(results_path, task.name, 'hyper-parameters.txt'), 'w') as f:
+                f.write(str(task))
             
 
 
