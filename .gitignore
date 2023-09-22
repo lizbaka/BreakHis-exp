@@ -4,7 +4,6 @@
 /runs
 
 *.pth
-/tasks.py
 
 !/dataset/README.md
 !/results/README.md

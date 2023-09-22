@@ -3,7 +3,7 @@ import dataset
 
 class task:
 
-    def __init__(self, name, num_classes, net_class, dataset_class, batch_size, epoch, AdamW_lr, AdamW_weight_decay):
+    def __init__(self, name, num_classes, net_class, dataset_class, batch_size, epoch, AdamW_lr, AdamW_weight_decay, start_from = None):
         self.name = name
         self.num_classes = num_classes
         self.net_class = net_class
@@ -12,6 +12,7 @@ class task:
         self.epoch = epoch
         self.AdamW_lr = AdamW_lr
         self.AdamW_weight_decay = AdamW_weight_decay
+        self.start_from = start_from
 
     def __str__(self):
         return f'''name: {self.name}
@@ -21,7 +22,8 @@ class task:
         batch_size: {self.batch_size}
         epoch: {self.epoch}
         AdamW_lr: {self.AdamW_lr}
-        AdamW_weight_decay: {self.AdamW_weight_decay}'''.replace('        ', '')
+        AdamW_weight_decay: {self.AdamW_weight_decay}
+        start_from: {self.start_from}'''.replace('        ', '')
 
 
 task_list = [

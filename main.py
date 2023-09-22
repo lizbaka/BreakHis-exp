@@ -31,7 +31,7 @@ def main():
         os.makedirs(os.path.join(ckpt_path, task.name), exist_ok=True)
         os.makedirs(os.path.join(results_path, task.name), exist_ok=True)
         
-        for fold in range(1, 6):
+        for fold in range(5, 6):
             # initialize model from a network class every time
             model = task.net_class(task.num_classes)
             optimizer = optim.AdamW(model.parameters(), lr=task.AdamW_lr, weight_decay=task.AdamW_weight_decay)
@@ -44,7 +44,8 @@ def main():
             T1 = time.time()
             do_train(model, train_loader, criterion, optimizer, task.epoch, task.batch_size, 
                     test_loader = test_loader, 
-                    save_epoch_ckpt_dir = os.path.join(ckpt_path, task.name, f'fold{fold}'))
+                    save_epoch_ckpt_dir = os.path.join(ckpt_path, task.name, f'fold{fold}'),
+                    start_from = task.start_from)
             T2 = time.time()
             print('Finished Training in time: %.5f s' % (T2-T1))
             

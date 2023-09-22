@@ -11,8 +11,10 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def do_train(model, train_loader, criterion, optimizer, epoch, batch_size, 
-            test_loader = None, save_epoch_ckpt_dir = None):
+            test_loader = None, save_epoch_ckpt_dir = None, start_from = None):
 
+    if start_from:
+        model.load_state_dict(torch.load(start_from))
     model.to(device)
     total_step = 0
 
