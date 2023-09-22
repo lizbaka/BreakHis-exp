@@ -31,7 +31,7 @@ def main():
         os.makedirs(os.path.join(ckpt_path, task.name), exist_ok=True)
         os.makedirs(os.path.join(results_path, task.name), exist_ok=True)
         
-        for fold in range(5, 6):
+        for fold in range(2, 3):
             # initialize model from a network class every time
             model = task.net_class(task.num_classes)
             optimizer = optim.AdamW(model.parameters(), lr=task.AdamW_lr, weight_decay=task.AdamW_weight_decay)
