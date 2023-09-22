@@ -42,15 +42,17 @@ def main():
             test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=task.batch_size, shuffle=False)
 
             T1 = time.time()
-            do_train(model, train_loader, criterion, optimizer, task.epoch, task.batch_size, test_loader = test_loader)
+            do_train(model, train_loader, criterion, optimizer, task.epoch, task.batch_size, 
+                    test_loader = test_loader, 
+                    save_epoch_ckpt_dir = os.path.join(ckpt_path, task.name, f'fold{fold}'))
             T2 = time.time()
             print('Finished Training in time: %.5f s' % (T2-T1))
             
             torch.save(model.state_dict(), os.path.join(ckpt_path, task.name, f'fold{fold}.pth'))
 
-            label_all, pred_all = do_test(model, test_loader, os.path.join(ckpt_path, task.name, f'fold{fold}.pth'))
+            _, label_all, pred_all, _ = do_test(model, test_loader, ckpt_path=os.path.join(ckpt_path, task.name, f'fold{fold}.pth'))
             confmat_metric = MulticlassConfusionMatrix(num_classes = task.num_classes)
-            cf_mat = confmat_metric(torch.tensor(label_all), torch.tensor(pred_all))
+            cf_mat = confmat_metric(label_all.cpu(), pred_all.cpu())
             with open(os.path.join(results_path, task.name, f'fold{fold}.txt'), 'w') as f:
                 f.write(str(cf_mat.numpy()))
             with open(os.path.join(results_path, task.name, 'hyper-parameters.txt'), 'w') as f:
