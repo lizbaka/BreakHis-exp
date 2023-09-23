@@ -46,7 +46,7 @@ task_list = [
     #      AdamW_lr = 0.001,
     #      AdamW_weight_decay = 0.0001),
 
-    # task(name = 'ResNet50-pretrain-bin', 
+    # task(name = 'ResNet50-bin-pretrain', 
     #     num_classes = 2, 
     #     net_class = networks.ResNet50_Pretrain, 
     #     dataset_class = dataset.BreakHis_csv_binary, 
@@ -55,7 +55,7 @@ task_list = [
     #     AdamW_lr = 0.001,
     #     AdamW_weight_decay = 0.0001),
 
-    # task(name = 'ResNet50-pretrain-sub', 
+    # task(name = 'ResNet50-sub-pretrain', 
     #      num_classes = 8, 
     #      net_class = networks.ResNet50_Pretrain, 
     #      dataset_class = dataset.BreakHis_csv_subtype, 
