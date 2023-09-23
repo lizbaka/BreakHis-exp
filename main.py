@@ -21,7 +21,8 @@ def main():
             [
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,), (0.5,)),
-                # transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)), # ImageNet
+                # transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)), # ImageNet normalization
+                # transforms.Normalize((0.7868, 0.6263, 0.7642), (0.1062, 0.1387, 0.0907)), # BreakHis normalization
                 transforms.Resize((460, 700), antialias=True)
             ]
         )
@@ -37,9 +38,9 @@ def main():
             optimizer = optim.AdamW(model.parameters(), lr=task.AdamW_lr, weight_decay=task.AdamW_weight_decay)
 
             train_dataset = task.dataset_class(dataset_root, fold_csv_path, fold=fold, group='train', transform=data_transform)
-            train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=task.batch_size, shuffle=True)
+            train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=task.batch_size, shuffle=True, num_workers=8)
             test_dataset = task.dataset_class(dataset_root, fold_csv_path, fold=fold, group='test', transform=data_transform)
-            test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=task.batch_size, shuffle=False)
+            test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=task.batch_size, shuffle=False, num_workers=8)
 
             T1 = time.time()
             do_train(model, train_loader, criterion, optimizer, task.epoch, task.batch_size, 
