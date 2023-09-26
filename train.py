@@ -1,3 +1,4 @@
+import os
 import time
 from tqdm import tqdm
 import torch
@@ -9,8 +10,7 @@ from torchmetrics.classification import MulticlassF1Score, MulticlassAccuracy, M
 # global config
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-
-def do_train(model, train_loader, criterion, optimizer, epoch, batch_size, 
+def do_train(name, model, train_loader, criterion, optimizer, epoch, batch_size, 
             test_loader = None, save_epoch_ckpt_dir = None, start_from = None):
 
     if start_from:
@@ -18,7 +18,7 @@ def do_train(model, train_loader, criterion, optimizer, epoch, batch_size,
     model.to(device)
     total_step = 0
 
-    writer = SummaryWriter(flush_secs=10)
+    writer = SummaryWriter(f'./runs/{name}', flush_secs=10)
     f1_metric = MulticlassF1Score(model.num_classes, average='macro').to(device)
     p_metric = MulticlassPrecision(model.num_classes, average='macro').to(device)
     r_metric = MulticlassRecall(model.num_classes, average='macro').to(device)
@@ -87,7 +87,7 @@ def do_train(model, train_loader, criterion, optimizer, epoch, batch_size,
             writer.add_scalar("AUROC/test", test_auroc, global_step = cur_epoch + 1)
 
         if save_epoch_ckpt_dir:
-            torch.save(model.state_dict(), save_epoch_ckpt_dir + f'epoch{cur_epoch + 1}.pth')
+            torch.save(model.state_dict(), os.path.join(save_epoch_ckpt_dir, f'epoch{cur_epoch + 1}.pth'))
 
     writer.close()
 
