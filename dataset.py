@@ -6,8 +6,8 @@ from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor
 
 
-CSV_PATH = './dataset/BreaKHis_v1/Folds.csv'
-DATASET_ROOT = './dataset/BreaKHis_v1/BreaKHis_v1'
+CSV_PATH = './dataset/BreaKHis_v1/myfold.csv'
+DATASET_ROOT = './dataset/BreaKHis_v1/'
 
 
 def get_info(name):
@@ -38,7 +38,7 @@ class image_data:
     
 
 
-class BreaKHis(Dataset):
+class BreaKHis_generate(Dataset):
 
     BINARY_LABEL_DICT  = {'B':0, 'M':1}
     SUBTYPE_LABEL_DICT = {'A':0, 'F':1, 'PT':2, 'TA':3, 'DC':4, 'LC':5, 'MC':6, 'PC':7}
@@ -82,6 +82,70 @@ class BreaKHis(Dataset):
         img_label_property_dict = {'binary':'tumor_class', 'subtype':'tumor_type', 'magnification':'magnification'}
         for img in self.img_list:
             img.label = label_dict[img.info[img_label_property_dict[task_type]]]
+
+        
+    def __getitem__(self, index):
+        path = self.img_list[index].path
+        label = self.img_list[index].label
+
+        img = Image.open(path)
+
+        if self.transform:
+            img = self.transform(img)
+        else:
+            img = ToTensor()(img)
+        
+        if self.target_transform:
+            label = self.target_transform(label)
+
+        return img, label
+
+    
+    def __len__(self):
+        return len(self.img_list)
+
+
+    def statistics(self):
+        class_cnt = {k:0 for k in self.label_dict.keys()}
+        label_invert_dict = {v:k for k, v in self.label_dict.items()}
+        for img in self.img_list:
+            class_cnt[label_invert_dict[img.label]] += 1
+        return self.magnification, len(self.img_list), class_cnt
+
+
+
+class BreaKHis(Dataset):
+
+    BINARY_LABEL_DICT  = {'B':0, 'M':1}
+    SUBTYPE_LABEL_DICT = {'A':0, 'F':1, 'PT':2, 'TA':3, 'DC':4, 'LC':5, 'MC':6, 'PC':7}
+    MAGNIFICATION_DICT = {'40':0, '100':1, '200':2, '400':3}
+    LABEL_DICT = {'binary':BINARY_LABEL_DICT, 'subtype':SUBTYPE_LABEL_DICT, 'magnification':MAGNIFICATION_DICT}
+
+    def __init__(self, task_type, group, magnification = None, transform = None, target_transform = None, split_csv = CSV_PATH):
+        assert task_type in ['binary', 'subtype', 'magnification'], 'task_type must be one of [binary, subtype, magnification]'
+        assert group in ['train', 'test'], 'group must be one of [train, test]'
+        if magnification:
+            magnification = str(magnification)
+        assert magnification == None or magnification in ['40', '100', '200', '400'], 'magnification must be one of [40, 100, 200, 400]'
+
+        self.magnification = magnification
+        self.transform = transform
+        self.target_transform = target_transform
+        self.label_dict = self.LABEL_DICT[task_type]
+        self.img_list = []
+
+        label_dict = self.LABEL_DICT[task_type]
+        df = pd.read_csv(split_csv)
+
+        if magnification:
+            df = df[df['mag_grp'] == int(magnification)]
+        df = df[df['grp'] == group]
+        img_label_property_dict = {'binary':'tumor_class', 'subtype':'tumor_type', 'magnification':'magnification'}
+        for _, row in df.iterrows():
+            path = os.path.join(DATASET_ROOT, row['path'])
+            info = get_info(row['path'].split('/')[-1])
+            label = label_dict[info[img_label_property_dict[task_type]]]
+            self.img_list.append(image_data(path, info, label))
 
         
     def __getitem__(self, index):
@@ -255,8 +319,8 @@ class BreaKHis(Dataset):
 
 if __name__ == '__main__':
     for mag in [None, 40, 100, 200, 400]:
-        train = Breakhis('subtype', 'train', mag).statistics()[2]
-        test = Breakhis('subtype', 'test', mag).statistics()[2]
+        train = BreaKHis('subtype', 'train', mag).statistics()[2]
+        test = BreaKHis('subtype', 'test', mag).statistics()[2]
         for k in train.keys():
             print(f'{k}: {train[k] / (train[k] + test[k])}')
     

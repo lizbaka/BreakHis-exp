@@ -6,7 +6,7 @@ MY_FOLD_CSV = './dataset/BreaKHis_v1/myfold.csv'
 
 data_list = []
 
-for magnification in [None, 40, 100, 200, 400]:
+for magnification in [40, 100, 200, 400]:
     data = dataset.BreaKHis('binary', 'train', magnification)
     for img in data.img_list:
         data_list.append({'mag_grp':int(magnification) if magnification else 'all', \
