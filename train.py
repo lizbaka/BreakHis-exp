@@ -11,10 +11,18 @@ from torchmetrics.classification import MulticlassF1Score, MulticlassAccuracy, M
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def do_train(name, model, train_loader, criterion, optimizer, epoch, batch_size, 
-            test_loader = None, save_epoch_ckpt_dir = None, start_from = None):
+            scheduler = None, test_loader = None, save_epoch_ckpt_dir = None, start_from = None):
 
+    start_epoch = 0
     if start_from:
-        model.load_state_dict(torch.load(start_from))
+        ckpt = torch.load(start_from)
+        model.load_state_dict(ckpt['model_state_dict'])
+        optimizer.load_state_dict(ckpt['optimizer_state_dict'] if ckpt['optimizer_state_dict'] else None)
+        if scheduler:
+            scheduler.load_state_dict(ckpt['scheduler_state_dict'] if ckpt['scheduler_state_dict'] else None)
+        start_epoch = ckpt['epoch'] - 1 if ckpt['epoch'] else 0
+        print(f'loaded ckpt from {start_from}, starting from epoch {start_epoch + 1}')
+    
     model.to(device)
     total_step = 0
 
@@ -25,10 +33,11 @@ def do_train(name, model, train_loader, criterion, optimizer, epoch, batch_size,
     acc_metric = MulticlassAccuracy(model.num_classes, average='macro').to(device)
     auroc_metric = MulticlassAUROC(model.num_classes, average='macro', thresholds=10).to(device)
 
-    for cur_epoch in range(epoch):  # loop over the dataset multiple times
-
+    for cur_epoch in range(start_epoch, epoch):  # loop over the dataset multiple times
+        
         pbar = tqdm(enumerate(train_loader, 0), total=len(train_loader))
-        pbar.desc = '[epoch %2d] loss: %.5f, f1 :%.5f' % (1, 0, 0)
+        pbar.desc = '[%s: epoch %2d, batch %3d] loss: %.5f' % \
+                (name, cur_epoch + 1, 0, 0)
 
         model.train()
         for i, data in pbar:
@@ -57,8 +66,8 @@ def do_train(name, model, train_loader, criterion, optimizer, epoch, batch_size,
             running_precision = p_metric(pred, labels).item()
             running_recall = r_metric(pred, labels).item()
 
-            pbar.desc = '[epoch %2d, batch %5d] loss: %.5f, f1:%.5f' % \
-                (cur_epoch + 1, i + 1, running_loss, running_f1)
+            pbar.desc = '[%s: epoch %2d, batch %3d] loss: %.5f' % \
+                (name, cur_epoch + 1, i + 1, running_loss)
 
             total_step += batch_size
             writer.add_scalar("Loss/train", running_loss, global_step = total_step)
@@ -67,6 +76,8 @@ def do_train(name, model, train_loader, criterion, optimizer, epoch, batch_size,
             writer.add_scalar("Precision/train", running_precision, global_step = total_step)
             writer.add_scalar("Recall/train", running_recall, global_step = total_step)
 
+        if scheduler:
+            scheduler.step()
         pbar.close()
         
         if test_loader:
@@ -87,7 +98,11 @@ def do_train(name, model, train_loader, criterion, optimizer, epoch, batch_size,
             writer.add_scalar("AUROC/test", test_auroc, global_step = cur_epoch + 1)
 
         if save_epoch_ckpt_dir:
-            torch.save(model.state_dict(), os.path.join(save_epoch_ckpt_dir, f'epoch{cur_epoch + 1}.pth'))
+            torch.save({
+                'epoch': cur_epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict() if scheduler else None}, os.path.join(save_epoch_ckpt_dir, f'epoch{cur_epoch + 1}.pth'))
 
     writer.close()
 

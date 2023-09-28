@@ -34,7 +34,10 @@ def main():
         
         # initialize model from a network class every time
         model = task.net_class(task.num_classes)
-        optimizer = optim.AdamW(model.parameters(), lr=task.AdamW_lr, weight_decay=task.AdamW_weight_decay)
+        optimizer = optim.AdamW(model.parameters(), lr=task.lr, weight_decay=task.AdamW_weight_decay)
+        # optimizer = optim.SGD(model.parameters(), lr=task.lr, momentum=0.9)
+        scheduler = None
+        # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20)
 
         train_dataset = task.dataset_class(task.task_type, 'train', magnification = task.magnification, transform=data_transform)
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=task.batch_size, shuffle=True, num_workers=8)
@@ -43,6 +46,7 @@ def main():
 
         T1 = time.time()
         do_train(task.name, model, train_loader, criterion, optimizer, task.epoch, task.batch_size, 
+                scheduler = scheduler,
                 test_loader = test_loader, 
                 save_epoch_ckpt_dir = os.path.join(ckpt_path, task.name),
                 start_from = task.start_from)
