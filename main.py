@@ -56,7 +56,7 @@ def main():
 
         _, label_all, pred_all, _ = do_test(model, test_loader, ckpt_path=os.path.join(output_dir, 'ckpt', 'last.pth'))
         confmat_metric = MulticlassConfusionMatrix(num_classes = task.num_classes)
-        cf_mat = confmat_metric(label_all.cpu(), pred_all.cpu())
+        cf_mat = confmat_metric(pred_all.cpu(), label_all.cpu())
         with open(os.path.join(output_dir, 'confusion_matrix.txt'), 'w') as f:
             f.write(str(cf_mat.numpy()))
         with open(os.path.join(outputs_dir, task.name, 'hyper-parameters.txt'), 'w') as f:
