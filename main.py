@@ -12,8 +12,7 @@ from tasks import task_list
 
 dataset_root = './dataset/BreaKHis_v1/'
 fold_csv_path = './dataset/BreaKHis_v1/Folds.csv'
-ckpt_path = './ckpt/'
-results_path = './results/'
+outputs_dir = './output/'
 
 
 def main():
@@ -29,8 +28,8 @@ def main():
     criterion = nn.CrossEntropyLoss()
 
     for task in task_list:
-        os.makedirs(os.path.join(ckpt_path, task.name), exist_ok=True)
-        os.makedirs(os.path.join(results_path, task.name), exist_ok=True)
+        output_dir = os.path.join(outputs_dir, task.name)
+        os.makedirs(output_dir, exist_ok=True)
         
         # initialize model from a network class every time
         model = task.net_class(task.num_classes)
@@ -45,22 +44,21 @@ def main():
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=task.batch_size, shuffle=False, num_workers=8)
 
         T1 = time.time()
-        do_train(task.name, model, train_loader, criterion, optimizer, task.epoch, task.batch_size, 
+        do_train(task.name, model, train_loader, criterion, optimizer, task.epoch, task.batch_size, output_dir,
                 scheduler = scheduler,
                 test_loader = test_loader, 
-                save_epoch_ckpt_dir = os.path.join(ckpt_path, task.name),
                 start_from = task.start_from)
         T2 = time.time()
         print('Time elapsed: %.5f s' % (T2-T1))
         
-        torch.save(model.state_dict(), os.path.join(ckpt_path, task.name, 'final.pth'))
+        torch.save(model.state_dict(), os.path.join(output_dir, 'ckpt', 'final.pth'))
 
-        _, label_all, pred_all, _ = do_test(model, test_loader, ckpt_path=os.path.join(ckpt_path, task.name, 'final.pth'))
+        _, label_all, pred_all, _ = do_test(model, test_loader, ckpt_path=os.path.join(output_dir, 'ckpt', 'final.pth'))
         confmat_metric = MulticlassConfusionMatrix(num_classes = task.num_classes)
         cf_mat = confmat_metric(label_all.cpu(), pred_all.cpu())
-        with open(os.path.join(results_path, task.name, 'confusion_matrix.txt'), 'w') as f:
+        with open(os.path.join(output_dir, 'confusion_matrix.txt'), 'w') as f:
             f.write(str(cf_mat.numpy()))
-        with open(os.path.join(results_path, task.name, 'hyper-parameters.txt'), 'w') as f:
+        with open(os.path.join(outputs_dir, task.name, 'hyper-parameters.txt'), 'w') as f:
             f.write(str(task))
             
 

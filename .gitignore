@@ -1,7 +1,5 @@
-/ckpt/*
-/dataset/*
-/results/*
-/runs
+dataset
+output
 
 *.pth
 
