@@ -7,7 +7,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def do_test(model, test_loader, ckpt_path = None, loss_criterion = None):
     torch.cuda.empty_cache()
     if ckpt_path:
-        model.load_state_dict(torch.load(ckpt_path))
+        ckpt = torch.load(ckpt_path)
+        model.load_state_dict(ckpt['model_state_dict'])
     model.to(device)
 
     batch_count = 0

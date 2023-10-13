@@ -14,25 +14,22 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def do_train(name, model, train_loader, criterion, optimizer, epoch, batch_size, output_dir, 
             scheduler = None, test_loader = None, start_from = None, resume = False):
 
-    start_epoch = 0
+    finished_epoch = 0
+    # start ckpt not specified, try to load last ckpt
+    if not start_from and resume and os.path.exists(os.path.join(output_dir, 'ckpt', 'last.pth')):
+        start_from = os.path.join(output_dir, 'ckpt', 'last.pth')
+        
     if start_from:
         ckpt = torch.load(start_from)
         model.load_state_dict(ckpt['model_state_dict'])
         if scheduler:
             scheduler.load_state_dict(ckpt['scheduler_state_dict'] if ckpt['scheduler_state_dict'] else None)
-        start_epoch = ckpt['epoch'] - 1 if ckpt['epoch'] else 0
-        print(f'loaded ckpt from {start_from}, starting from epoch {start_epoch + 1}')
-    elif resume and os.path.exists(os.path.join(output_dir, 'ckpt', 'last.pth')):
-        ckpt = torch.load(os.path.join(output_dir, 'ckpt', 'last.pth'))
-        model.load_state_dict(ckpt['model_state_dict'])
-        if scheduler:
-            scheduler.load_state_dict(ckpt['scheduler_state_dict'] if ckpt['scheduler_state_dict'] else None)
-        start_epoch = ckpt['epoch'] - 1 if ckpt['epoch'] else 0
-        print(f'loaded ckpt from {os.path.join(output_dir, "ckpt", "last.pth")}, starting from epoch {start_epoch + 1}')
+        finished_epoch = ckpt['epoch']
+        print(f'loaded ckpt from {os.path.join(output_dir, "ckpt", "last.pth")}, starting from epoch {finished_epoch + 1}')
     
     os.makedirs(os.path.join(output_dir, 'ckpt'), exist_ok=True)
     model.to(device)
-    total_step = start_epoch * len(train_loader)
+    total_step = finished_epoch * len(train_loader)
 
     writer = SummaryWriter(output_dir, flush_secs=10)
     f1_metric = MulticlassF1Score(model.num_classes, average='macro').to(device)
@@ -41,7 +38,8 @@ def do_train(name, model, train_loader, criterion, optimizer, epoch, batch_size,
     acc_metric = MulticlassAccuracy(model.num_classes, average='macro').to(device)
     auroc_metric = MulticlassAUROC(model.num_classes, average='macro', thresholds=10).to(device)
 
-    for cur_epoch in range(start_epoch, epoch):  # loop over the dataset multiple times
+    # cur_epoch is 0-based
+    for cur_epoch in range(finished_epoch, epoch):
         
         pbar = tqdm(enumerate(train_loader, 0), total=len(train_loader))
         pbar.desc = '[%s: epoch %2d, batch %3d] loss: %.5f' % \
