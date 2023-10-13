@@ -6,12 +6,13 @@ from torch.utils.tensorboard import SummaryWriter
 from test import do_test
 from torchmetrics.classification import MulticlassF1Score, MulticlassAccuracy, MulticlassPrecision, MulticlassRecall, MulticlassAUROC
 
+save_period = 10
 
 # global config
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def do_train(name, model, train_loader, criterion, optimizer, epoch, batch_size, output_dir, 
-            scheduler = None, test_loader = None, start_from = None):
+            scheduler = None, test_loader = None, start_from = None, resume = False):
 
     start_epoch = 0
     if start_from:
@@ -21,10 +22,17 @@ def do_train(name, model, train_loader, criterion, optimizer, epoch, batch_size,
             scheduler.load_state_dict(ckpt['scheduler_state_dict'] if ckpt['scheduler_state_dict'] else None)
         start_epoch = ckpt['epoch'] - 1 if ckpt['epoch'] else 0
         print(f'loaded ckpt from {start_from}, starting from epoch {start_epoch + 1}')
+    elif resume:
+        ckpt = torch.load(os.path.join(output_dir, 'ckpt', 'last.pth'))
+        model.load_state_dict(ckpt['model_state_dict'])
+        if scheduler:
+            scheduler.load_state_dict(ckpt['scheduler_state_dict'] if ckpt['scheduler_state_dict'] else None)
+        start_epoch = ckpt['epoch'] - 1 if ckpt['epoch'] else 0
+        print(f'loaded ckpt from {os.path.join(output_dir, "ckpt", "last.pth")}, starting from epoch {start_epoch + 1}')
     
     os.makedirs(os.path.join(output_dir, 'ckpt'), exist_ok=True)
     model.to(device)
-    total_step = 0
+    total_step = start_epoch * len(train_loader)
 
     writer = SummaryWriter(output_dir, flush_secs=10)
     f1_metric = MulticlassF1Score(model.num_classes, average='macro').to(device)
@@ -97,10 +105,16 @@ def do_train(name, model, train_loader, criterion, optimizer, epoch, batch_size,
             writer.add_scalar("Recall/test", test_recall, global_step = cur_epoch + 1)
             writer.add_scalar("AUROC/test", test_auroc, global_step = cur_epoch + 1)
 
+        if (cur_epoch + 1) % save_period == 0:
+            torch.save({
+                'epoch': cur_epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict() if scheduler else None}, os.path.join(output_dir, 'ckpt', f'epoch{cur_epoch + 1}.pth'))
+            
         torch.save({
             'epoch': cur_epoch + 1,
             'model_state_dict': model.state_dict(),
-            'scheduler_state_dict': scheduler.state_dict() if scheduler else None}, os.path.join(output_dir, 'ckpt', f'epoch{cur_epoch + 1}.pth'))
+            'scheduler_state_dict': scheduler.state_dict() if scheduler else None}, os.path.join(output_dir, 'ckpt', 'last.pth'))
 
     writer.close()
 

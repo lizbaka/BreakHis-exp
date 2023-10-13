@@ -35,8 +35,8 @@ def main():
         model = task.net_class(task.num_classes)
         optimizer = optim.AdamW(model.parameters(), lr=task.lr, weight_decay=task.AdamW_weight_decay)
         # optimizer = optim.SGD(model.parameters(), lr=task.lr, momentum=0.9)
-        scheduler = None
-        # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20)
+        # scheduler = None
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
         train_dataset = task.dataset_class(task.task_type, 'train', magnification = task.magnification, transform=data_transform)
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=task.batch_size, shuffle=True, num_workers=8)
@@ -47,13 +47,14 @@ def main():
         do_train(task.name, model, train_loader, criterion, optimizer, task.epoch, task.batch_size, output_dir,
                 scheduler = scheduler,
                 test_loader = test_loader, 
-                start_from = task.start_from)
+                start_from = task.start_from,
+                resume = True)
         T2 = time.time()
         print('Time elapsed: %.5f s' % (T2-T1))
         
-        torch.save(model.state_dict(), os.path.join(output_dir, 'ckpt', 'final.pth'))
+        # torch.save(model.state_dict(), os.path.join(output_dir, 'ckpt', 'final.pth'))
 
-        _, label_all, pred_all, _ = do_test(model, test_loader, ckpt_path=os.path.join(output_dir, 'ckpt', 'final.pth'))
+        _, label_all, pred_all, _ = do_test(model, test_loader, ckpt_path=os.path.join(output_dir, 'ckpt', 'last.pth'))
         confmat_metric = MulticlassConfusionMatrix(num_classes = task.num_classes)
         cf_mat = confmat_metric(label_all.cpu(), pred_all.cpu())
         with open(os.path.join(output_dir, 'confusion_matrix.txt'), 'w') as f:
