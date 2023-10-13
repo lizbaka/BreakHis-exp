@@ -22,7 +22,7 @@ def do_train(name, model, train_loader, criterion, optimizer, epoch, batch_size,
             scheduler.load_state_dict(ckpt['scheduler_state_dict'] if ckpt['scheduler_state_dict'] else None)
         start_epoch = ckpt['epoch'] - 1 if ckpt['epoch'] else 0
         print(f'loaded ckpt from {start_from}, starting from epoch {start_epoch + 1}')
-    elif resume:
+    elif resume and os.path.exists(os.path.join(output_dir, 'ckpt', 'last.pth')):
         ckpt = torch.load(os.path.join(output_dir, 'ckpt', 'last.pth'))
         model.load_state_dict(ckpt['model_state_dict'])
         if scheduler:
