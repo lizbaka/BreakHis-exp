@@ -1,68 +1,108 @@
 import os
 import time
 import torch
+import argparse
+from torch.utils.data import DataLoader
 from torch import nn, optim
 from torchvision import transforms
-from torchmetrics.classification import MulticlassConfusionMatrix
 
-from train import do_train
-from test import do_test
-from tasks import task_list
-
+import datasets
+from train_eval import do_train, do_eval
+from datasets import num_classes_dict
+from networks import network_dict
 
 dataset_root = './dataset/BreaKHis_v1/'
 fold_csv_path = './dataset/BreaKHis_v1/Folds.csv'
-outputs_dir = './output/'
 
+seed = 123
+step_size = 1
+gamma = 0.8
 
-def main():
+def main(args):
+    assert args.best_metric in ['acc', 'auroc', 'f1', 'precision', 'recall'], 'best metric must be one of acc, auroc, f1, precision, recall'
+    
+    # random.seed(seed)     # python random generator
+    # np.random.seed(seed)  # numpy random generator
+
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
     data_transform = transforms.Compose(
             [
                 transforms.ToTensor(),
                 # transforms.Normalize((0.5,), (0.5,)),
                 # transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)), # ImageNet normalization
-                transforms.Normalize((0.7868, 0.6263, 0.7642), (0.1062, 0.1387, 0.0907)), # BreakHis normalization
+                transforms.Normalize((0.7862, 0.6261, 0.7654), (0.1065, 0.1396, 0.0910)), # BreakHis normalization
                 transforms.Resize((460, 700), antialias=True)
             ]
         )
+    
+    num_classes = num_classes_dict[args.task]
+    model = network_dict[args.net](num_classes=num_classes)
     criterion = nn.CrossEntropyLoss()
+    optimizer = optim.AdamW(model.parameters(), lr=args.lr)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
 
-    for task in task_list:
-        output_dir = os.path.join(outputs_dir, task.name)
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # initialize model from a network class every time
-        model = task.net_class(task.num_classes)
-        optimizer = optim.AdamW(model.parameters(), lr=task.lr, weight_decay=task.AdamW_weight_decay)
-        # optimizer = optim.SGD(model.parameters(), lr=task.lr, momentum=0.9)
-        # scheduler = None
-        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    train_dataset = datasets.BreaKHis(args.task, 'train', magnification = args.mag, transform=data_transform)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8)
+    dev_dataset = datasets.BreaKHis(args.task, 'dev', magnification = args.mag, transform=data_transform)
+    dev_loader = DataLoader(dev_dataset, batch_size=args.batch_size, shuffle=False, num_workers=8)
+    test_dataset = datasets.BreaKHis(args.task, 'test', magnification = args.mag, transform=data_transform)
+    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=8)
 
-        train_dataset = task.dataset_class(task.task_type, 'train', magnification = task.magnification, transform=data_transform)
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=task.batch_size, shuffle=True, num_workers=8)
-        test_dataset = task.dataset_class(task.task_type, 'test', magnification = task.magnification, transform=data_transform)
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=task.batch_size, shuffle=False, num_workers=8)
-
+    os.makedirs(args.output_dir, exist_ok=True)
+    if not args.eval:
         T1 = time.time()
-        do_train(task.name, model, train_loader, criterion, optimizer, task.epoch, task.batch_size, output_dir,
+        do_train(model, train_loader, criterion, optimizer, args.epoch, args.output_dir, args.best_metric,
                 scheduler = scheduler,
-                test_loader = test_loader, 
-                start_from = task.start_from,
+                dev_loader = dev_loader, 
+                ckpt = args.ckpt,
                 resume = True)
         T2 = time.time()
         print('Time elapsed: %.5f s' % (T2-T1))
-        
-        # torch.save(model.state_dict(), os.path.join(output_dir, 'ckpt', 'final.pth'))
+        ckpt_path = os.path.join(args.output_dir, 'ckpt', 'best.pth')
+    else:
+        assert args.ckpt is not None, 'checkpoint path must be specified for evaluation'
+        ckpt_path = args.ckpt
 
-        _, label_all, pred_all, _ = do_test(model, test_loader, ckpt_path=os.path.join(output_dir, 'ckpt', 'last.pth'))
-        confmat_metric = MulticlassConfusionMatrix(num_classes = task.num_classes)
-        cf_mat = confmat_metric(pred_all.cpu(), label_all.cpu())
-        with open(os.path.join(output_dir, 'confusion_matrix.txt'), 'w') as f:
-            f.write(str(cf_mat.numpy()))
-        with open(os.path.join(outputs_dir, task.name, 'hyper-parameters.txt'), 'w') as f:
-            f.write(str(task))
+    loss, _, _, _, metrics = do_eval(model, test_loader, ckpt_path=ckpt_path)
+    with open(os.path.join(args.output_dir, 'result.txt'), 'w') as f:
+        f.write('results on test set:\n')
+        f.write(f'loss: {loss}\n')
+        f.write(f'accuracy: {metrics["acc"]}\n')
+        f.write(f'precision: {metrics["precision"]}\n')
+        f.write(f'recall: {metrics["recall"]}\n')
+        f.write(f'f1: {metrics["f1"]}\n')
+        f.write(f'auroc: {metrics["auroc"]}\n')
+        f.write(f'confusion matrix:\n')
+        f.write(f'{metrics["confusion_matrix"]}\n')
+    with open(os.path.join(args.output_dir, 'config.txt'), 'w') as f:
+        f.write(f'task: {args.task}\n')
+        f.write(f'net: {args.net}\n')
+        f.write(f'batch_size: {args.batch_size}\n')
+        f.write(f'epoch: {args.epoch}\n')
+        f.write(f'lr: {args.lr}\n')
+        f.write(f'mag: {args.mag if args.mag is not None else "All"}\n')
+        if args.ckpt is not None:
+            f.write(f'ckpt: {args.ckpt}\n')
+        f.write(f'best_metric: {args.best_metric}\n')
             
 
-
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--task', type=str, required=True, help='task type')
+    parser.add_argument('--net', type=str, required=True, help='network class')
+    parser.add_argument('--output_dir', type=str, required=True, help='output directory')
+    parser.add_argument('--batch_size', type=int, default=32, help='batch size')
+    parser.add_argument('--epoch', type=int, default=20, help='epoch')
+    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
+    parser.add_argument('--mag', type=int, default=None, help='magnification')
+    parser.add_argument('--ckpt', type=str, default=None, help='checkpoint path')
+    parser.add_argument('--resume', action='store_true', help='resume training')
+    parser.add_argument('--eval', action='store_true', help='evaluate only')
+    parser.add_argument('--best_metric', type=str, default='auroc', help='metric to determine best ckpt')
+    args = parser.parse_args()
+    main(args)

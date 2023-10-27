@@ -1,21 +1,5 @@
 import torch.nn as nn
-import torch.nn.functional as F
 import torchvision.models as models
-
-
-class ResNet18(nn.Module):
-    def __init__(self, num_classes):
-        super(ResNet18, self).__init__()
-        self.num_classes = num_classes
-        
-        self.resnet = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-        
-        num_features = self.resnet.fc.in_features
-        self.resnet.fc = nn.Linear(num_features, num_classes)
-        
-    def forward(self, x):
-        x = self.resnet(x)
-        return x
 
 
 class ResNet50(nn.Module):
@@ -107,3 +91,28 @@ class VGG19_bn(nn.Module):
         x = self.vgg19_bn(x)
         return x
 
+
+class ResNeXt_101_32x8d(nn.Module):
+    def __init__(self, num_classes):
+        super(ResNeXt_101_32x8d, self).__init__()
+        self.num_classes = num_classes
+        
+        self.resnext = models.resnext101_32x8d(weights=models.ResNeXt101_32X8D_Weights.DEFAULT)
+        
+        num_features = self.resnext.fc.in_features
+        self.resnext.fc = nn.Linear(num_features, num_classes)
+
+    def forward(self, x):
+        x = self.resnext(x)
+        return x
+    
+
+network_dict = {
+    'ResNet50': ResNet50,
+    'ResNet101': ResNet101,
+    'DenseNet121': DenseNet121,
+    'DenseNet201': DenseNet201,
+    'VGG11': VGG11,
+    'VGG19_bn': VGG19_bn,
+    'ResNeXt_101_32x8d': ResNeXt_101_32x8d
+}
