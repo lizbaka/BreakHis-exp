@@ -1,4 +1,5 @@
 import os
+import shutil
 from tqdm import tqdm
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -11,13 +12,15 @@ def do_train(model, train_loader, criterion, optimizer, epoch, output_dir, best_
             scheduler = None, dev_loader = None, ckpt = None, resume = False):
 
     start_epoch = 0
-    best = -1
+    best_metric_value = -1
     # start ckpt not specified, try to load last ckpt
     if not ckpt and resume and os.path.exists(os.path.join(output_dir, 'ckpt', 'last.pth')):
         ckpt = os.path.join(output_dir, 'ckpt', 'last.pth')
         
     if ckpt:
         ckpt = torch.load(ckpt)
+        assert ckpt['best_metric'] == best_metric, 'best metric mismatch'
+        best_metric_value = ckpt['best_metric_value']
         model.load_state_dict(ckpt['model_state_dict'])
         optimizer.load_state_dict(ckpt['optimizer_state_dict'])
         if scheduler:
@@ -72,22 +75,26 @@ def do_train(model, train_loader, criterion, optimizer, epoch, output_dir, best_
             print("testing")
             eval_loss, _, _, _, metrics = do_eval(model, dev_loader, loss_criterion = criterion)
 
-            writer.add_scalar("Loss/test", eval_loss, global_step = cur_epoch)
-            writer.add_scalar("F1/test", metrics['f1'], global_step = cur_epoch)
-            writer.add_scalar("Accuracy/test", metrics['acc'], global_step = cur_epoch)
-            writer.add_scalar("Precision/test", metrics['precision'], global_step = cur_epoch)
-            writer.add_scalar("Recall/test", metrics['recall'], global_step = cur_epoch)
-            writer.add_scalar("AUROC/test", metrics['auroc'], global_step = cur_epoch)
+            writer.add_scalar("dev/Loss", eval_loss, global_step = cur_epoch)
+            writer.add_scalar("dev/F1", metrics['f1'], global_step = cur_epoch)
+            writer.add_scalar("dev/Accuracy", metrics['acc'], global_step = cur_epoch)
+            writer.add_scalar("dev/Precision", metrics['precision'], global_step = cur_epoch)
+            writer.add_scalar("dev/Recall", metrics['recall'], global_step = cur_epoch)
+            writer.add_scalar("dev/AUROC", metrics['auroc'], global_step = cur_epoch)
 
-            if best < metrics[best_metric]:
+            if best_metric_value < metrics[best_metric]:
                 torch.save({
+                    'best_metric': best_metric,
+                    'best_metric_value': metrics[best_metric],
                     'epoch': cur_epoch,
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'scheduler_state_dict': scheduler.state_dict() if scheduler else None}, os.path.join(output_dir, 'ckpt', 'best.pth'))
-                best = metrics[best_metric]
+                best_metric_value = metrics[best_metric]
             
         torch.save({
+                'best_metric': best_metric,
+                'best_metric_value': metrics[best_metric],
                 'epoch': cur_epoch,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
