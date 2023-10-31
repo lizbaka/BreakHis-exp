@@ -72,7 +72,7 @@ def do_train(model, train_loader, criterion, optimizer, epoch, output_dir, best_
         pbar.close()
         
         if dev_loader:
-            print("testing")
+            print("evaluating")
             eval_loss, _, _, _, metrics = do_eval(model, dev_loader, loss_criterion = criterion)
 
             writer.add_scalar("dev/Loss", eval_loss, global_step = cur_epoch)
