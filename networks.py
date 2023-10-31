@@ -17,12 +17,12 @@ class ResNet50(nn.Module):
         return x
     
 
-class ResNet101(nn.Module):
+class ResNet152(nn.Module):
     def __init__(self, num_classes):
-        super(ResNet101, self).__init__()
+        super(ResNet152, self).__init__()
         self.num_classes = num_classes
         
-        self.resnet = models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
+        self.resnet = models.resnet152(weights=models.ResNet152_Weights.DEFAULT)
         
         num_features = self.resnet.fc.in_features
         self.resnet.fc = nn.Linear(num_features, num_classes)
@@ -109,7 +109,7 @@ class ResNeXt_101_32x8d(nn.Module):
 
 network_dict = {
     'ResNet50': ResNet50,
-    'ResNet101': ResNet101,
+    'ResNet152': ResNet152,
     'DenseNet121': DenseNet121,
     'DenseNet201': DenseNet201,
     'VGG11': VGG11,
