@@ -40,6 +40,15 @@ def main(args):
             ]
         )
     
+    if args.da:
+        data_transform = transforms.Compose(
+            [
+                data_transform,
+                transforms.RandomHorizontalFlip(p=0.5),
+                transforms.RandomVerticalFlip(p=0.5),
+            ]
+        )
+    
     num_classes = num_classes_dict[args.task]
     model = network_dict[args.net](num_classes=num_classes)
     criterion = nn.CrossEntropyLoss()
@@ -109,5 +118,6 @@ if __name__ == '__main__':
     parser.add_argument('--resume', action='store_true', help='resume training')
     parser.add_argument('--eval', action='store_true', help='evaluate only')
     parser.add_argument('--best_metric', type=str, default='auroc', help='metric to determine best ckpt')
+    parser.add_argument('--da', action='store_true', help='use data augmentation')
     args = parser.parse_args()
     main(args)
