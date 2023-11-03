@@ -24,6 +24,7 @@ def main(args):
     # random.seed(seed)     # python random generator
     # np.random.seed(seed)  # numpy random generator
 
+    # reproducibility
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
@@ -72,9 +73,8 @@ def main(args):
                 resume = True)
         T2 = time.time()
         print('Time elapsed: %.5f s' % (T2-T1))
-        ckpt_path = os.path.join(args.output_dir, 'ckpt', 'best.pth')
-    else:
-        assert args.ckpt is not None, 'checkpoint path must be specified for evaluation'
+    ckpt_path = os.path.join(args.output_dir, 'ckpt', 'best.pth')
+    if args.ckpt is not None:
         ckpt_path = args.ckpt
 
     print('Testing...')
@@ -86,13 +86,21 @@ def main(args):
     with open(os.path.join(args.output_dir, 'result.txt'), 'w') as f:
         f.write('results on test set:\n')
         f.write(f'loss: {loss}\n')
-        f.write(f'accuracy: {metrics["acc"]}\n')
-        f.write(f'precision: {metrics["precision"]}\n')
-        f.write(f'recall: {metrics["recall"]}\n')
-        f.write(f'f1: {metrics["f1"]}\n')
+        f.write(f'accuracy: macro: {metrics["acc"]["macro"]}, micro: {metrics["acc"]["micro"]}\n')
+        f.write(f'precision: macro: {metrics["precision"]["macro"]}, micro: {metrics["precision"]["micro"]}\n')
+        f.write(f'recall: macro: {metrics["recall"]["macro"]}, micro: {metrics["recall"]["micro"]}\n')
+        f.write(f'f1: macro: {metrics["f1"]["macro"]}, micro: {metrics["f1"]["micro"]}\n')
         f.write(f'auroc: {metrics["auroc"]}\n')
         f.write(f'confusion matrix:\n')
         f.write(f'{metrics["confusion_matrix"]}\n')
+    with open('result.csv', 'a') as f:
+        f.write(f'{args.output_dir},' +
+                f'{metrics["acc"]["macro"]}, {metrics["acc"]["micro"]}, ' +
+                f'{metrics["precision"]["macro"]}, {metrics["precision"]["micro"]}, ' +
+                f'{metrics["recall"]["macro"]}, {metrics["recall"]["micro"]}, ' +
+                f'{metrics["f1"]["macro"]}, {metrics["f1"]["micro"]}, ' +
+                f'{metrics["auroc"]}\n'
+                )
     with open(os.path.join(args.output_dir, 'config.txt'), 'w') as f:
         f.write(f'task: {args.task}\n')
         f.write(f'net: {args.net}\n')

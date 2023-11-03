@@ -76,10 +76,10 @@ def do_train(model, train_loader, criterion, optimizer, epoch, output_dir, best_
             eval_loss, _, _, _, metrics = do_eval(model, dev_loader, loss_criterion = criterion)
 
             writer.add_scalar("dev/Loss", eval_loss, global_step = cur_epoch)
-            writer.add_scalar("dev/F1", metrics['f1'], global_step = cur_epoch)
-            writer.add_scalar("dev/Accuracy", metrics['acc'], global_step = cur_epoch)
-            writer.add_scalar("dev/Precision", metrics['precision'], global_step = cur_epoch)
-            writer.add_scalar("dev/Recall", metrics['recall'], global_step = cur_epoch)
+            writer.add_scalar("dev/F1", metrics['f1']['macro'], global_step = cur_epoch)
+            writer.add_scalar("dev/Accuracy", metrics['acc']['macro'], global_step = cur_epoch)
+            writer.add_scalar("dev/Precision", metrics['precision']['macro'], global_step = cur_epoch)
+            writer.add_scalar("dev/Recall", metrics['recall']['macro'], global_step = cur_epoch)
             writer.add_scalar("dev/AUROC", metrics['auroc'], global_step = cur_epoch)
 
             if best_metric_value < metrics[best_metric]:
@@ -136,19 +136,23 @@ def do_eval(model, eval_loader, ckpt_path = None, loss_criterion = None):
     if loss_criterion and batch_count > 0:
         loss /= batch_count
 
-    f1_metric = MulticlassF1Score(model.num_classes, average='macro').to(device)
-    p_metric = MulticlassPrecision(model.num_classes, average='macro').to(device)
-    r_metric = MulticlassRecall(model.num_classes, average='macro').to(device)
-    acc_metric = MulticlassAccuracy(model.num_classes, average='macro').to(device)
+    ma_f1_metric = MulticlassF1Score(model.num_classes, average='macro').to(device)
+    mi_f1_metric = MulticlassF1Score(model.num_classes, average='micro').to(device)
+    ma_p_metric = MulticlassPrecision(model.num_classes, average='macro').to(device)
+    mi_p_metric = MulticlassPrecision(model.num_classes, average='micro').to(device)
+    ma_r_metric = MulticlassRecall(model.num_classes, average='macro').to(device)
+    mi_r_metric = MulticlassRecall(model.num_classes, average='micro').to(device)
+    ma_acc_metric = MulticlassAccuracy(model.num_classes, average='macro').to(device)
+    mi_acc_metric = MulticlassAccuracy(model.num_classes, average='micro').to(device)
     auroc_metric = MulticlassAUROC(model.num_classes, average='macro', thresholds=10).to(device)
     confusion_matrix_metric = MulticlassConfusionMatrix(model.num_classes).to(device)
 
     label_all = label_all.long()
     metrics = {}
-    metrics['f1'] = f1_metric(pred_all, label_all).item()
-    metrics['acc'] = acc_metric(pred_all, label_all).item()
-    metrics['precision'] = p_metric(pred_all, label_all).item()
-    metrics['recall'] = r_metric(pred_all, label_all).item()
+    metrics['f1'] = {'macro': ma_f1_metric(pred_all, label_all).item(), 'micro': mi_f1_metric(pred_all, label_all).item()}
+    metrics['acc'] = {'macro': ma_acc_metric(pred_all, label_all).item(), 'micro': mi_acc_metric(pred_all, label_all).item()}
+    metrics['precision'] = {'macro': ma_p_metric(pred_all, label_all).item(), 'micro': mi_p_metric(pred_all, label_all).item()}
+    metrics['recall'] = {'macro': ma_r_metric(pred_all, label_all).item(), 'micro': mi_r_metric(pred_all, label_all).item()}
     metrics['auroc'] = auroc_metric(output_all, label_all).item()
     metrics['confusion_matrix'] = confusion_matrix_metric(pred_all, label_all).cpu().numpy()
     
