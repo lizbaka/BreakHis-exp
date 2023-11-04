@@ -65,7 +65,7 @@ def do_train(model, train_loader, criterion, optimizer, epoch, output_dir, best_
                 (output_dir, cur_epoch, i + 1, running_loss)
 
             total_step += train_loader.batch_size
-            writer.add_scalar("Loss/train", running_loss, global_step = total_step)
+            writer.add_scalar("train/Loss", running_loss, global_step = total_step)
 
         if scheduler:
             scheduler.step()

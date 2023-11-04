@@ -66,6 +66,5 @@ def statistic_myfold():
     table.to_csv('tumor_table.csv')
 
 if __name__ == '__main__':
-    # dump_myfold_csv()
+    dump_myfold_csv()
     statistic_myfold()
-    pass
