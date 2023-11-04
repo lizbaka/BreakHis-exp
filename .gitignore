@@ -1,10 +1,7 @@
 dataset
-output
 
 *.pth
-
-!/dataset/README.md
-!/results/README.md
+*tfevents*
 
 
 # Byte-compiled / optimized / DLL files

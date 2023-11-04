@@ -81,7 +81,7 @@ def main(args):
     T1 = time.time()
     loss, _, _, _, metrics = do_eval(model, test_loader, ckpt_path=ckpt_path)
     T2 = time.time()
-    with open('time.csv', 'a') as f:
+    with open('test_infer_time.csv', 'a') as f:
         f.write(f'{args.output_dir}, {T2-T1}\n')
     with open(os.path.join(args.output_dir, 'result.txt'), 'w') as f:
         f.write('results on test set:\n')
