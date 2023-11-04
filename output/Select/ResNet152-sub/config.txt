@@ -1,0 +1,7 @@
+task: subtype
+net: ResNet152
+batch_size: 16
+epoch: 20
+lr: 0.0001
+mag: All
+best_metric: auroc

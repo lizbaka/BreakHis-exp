@@ -1,0 +1,10 @@
+results on test set:
+loss: 0.0
+accuracy: macro: 0.9733127355575562, micro: 0.9765625
+precision: macro: 0.9733127355575562, micro: 0.9765625
+recall: macro: 0.9733127355575562, micro: 0.9765625
+f1: macro: 0.9733127355575562, micro: 0.9765625
+auroc: 0.9926023483276367
+confusion matrix:
+[[241   9]
+ [  9 509]]

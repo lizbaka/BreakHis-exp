@@ -1,0 +1,7 @@
+task: binary
+net: VGG11
+batch_size: 32
+epoch: 20
+lr: 0.0001
+mag: All
+best_metric: auroc

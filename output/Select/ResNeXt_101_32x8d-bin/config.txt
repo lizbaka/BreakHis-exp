@@ -1,0 +1,7 @@
+task: binary
+net: ResNeXt_101_32x8d
+batch_size: 8
+epoch: 20
+lr: 1e-05
+mag: All
+best_metric: auroc
