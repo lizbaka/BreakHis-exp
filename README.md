@@ -115,13 +115,13 @@ Follow the instructions below to build the environment
 
     | Args          | Expected value(s)                                            | Note                                                         |
     | ------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-    | `task`        | binary, subtype or magnification                             | Correspond to Classes, Types and Magnifications              |
+    | `task`        | `binary`, `subtype` or `magnification`                       | Correspond to Classes, Types and Magnifications              |
     | `net`         | `ResNet50`, `ResNet152`, `DenseNet121`, `DenseNet201`, `VGG11`, `VGG19_bn`, `ResNeXt_101_32x8d` | You can add your own. See `networks.py`                      |
     | `output_dir`  | path to the output dir                                       | Where best and last checkpoints, tfevents, configs and test results are stored |
     | `batch_size`  | integer (optional)                                           | `32` if not specified                                        |
     | `epoch`       | integer (optional)                                           | `20` if not specified                                        |
     | `lr`          | float (optional)                                             | Learning rate, `1e-4`  if not specified                      |
-    | `mag`         | `40`, `100`, `200`, `400` (optional)                         | Use a subset of the dataset with certain magnification when specified, or use the whole dataset instead |
+    | `mag`         | `40`, `100`, `200`, `400` (optional)                         | Use a subset of the dataset with certain magnification if specified, instead use the whole dataset |
     | `best_metric` | `acc`, `auroc`, `f1`, `precision`, `recall` (optional)       | Metrics are computed with macro average. use `auroc` if not specified |
     | `ckpt`        | path to a checkpoint file                                    | Which checkpoint to evaluate or to continue training on      |
     | `resume`      | *switch* (optional)                                          | Whether to continue training on `last.pth` when existed      |
@@ -140,7 +140,7 @@ Follow the instructions below to build the environment
 
     Monitored metrics include loss, accuracy, auroc, f1, precision, recall on dev set and loss on train set.
 
-# Reference Results
+# Our Results
 
 We trained several different neural networks using this project. 
 
