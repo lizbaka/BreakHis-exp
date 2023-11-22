@@ -34,9 +34,9 @@ The repository utilizes several different models pretrained on ImageNet and fine
 
 This repository basically contains 3 part:
 
-1. Split the BreakHis dataset
-1. Load and preprocess the dataset
-1. Train and evaluate classifiers on the dataset
+1. Split the *BreakHis* dataset
+2. Load and preprocess the dataset
+3. Train and evaluate classifiers on the dataset
 
 ## Dependencies
 
