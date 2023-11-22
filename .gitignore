@@ -1,9 +1,3 @@
-dataset
-
-*.pth
-*tfevents*
-
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -242,3 +236,10 @@ fabric.properties
 
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
+
+/dataset/BreaKHis_v1/BreaKHis_v1/*
+
+*.pth
+*tfevents*
+
+!/dataset/BreKHis_v1/mysplit.csv
