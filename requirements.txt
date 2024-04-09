@@ -1,5 +1,5 @@
 pandas==2.1.2
-Pillow==10.2.0
+Pillow==10.3.0
 torch==2.0.1+cu117
 torchmetrics==1.2.0
 torchvision==0.15.2+cu117
