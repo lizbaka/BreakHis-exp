@@ -82,19 +82,21 @@ def do_train(model, train_loader, criterion, optimizer, epoch, output_dir, best_
             writer.add_scalar("dev/Recall", metrics['recall']['macro'], global_step = cur_epoch)
             writer.add_scalar("dev/AUROC", metrics['auroc'], global_step = cur_epoch)
 
-            if best_metric_value < metrics[best_metric]:
+            this_metric_value = metrics[best_metric] if best_metric == 'auroc' else metrics[best_metric]['macro']
+
+            if best_metric_value < this_metric_value:
                 torch.save({
                     'best_metric': best_metric,
-                    'best_metric_value': metrics[best_metric],
+                    'best_metric_value': this_metric_value,
                     'epoch': cur_epoch,
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'scheduler_state_dict': scheduler.state_dict() if scheduler else None}, os.path.join(output_dir, 'ckpt', 'best.pth'))
-                best_metric_value = metrics[best_metric]
+                best_metric_value = this_metric_value
             
         torch.save({
                 'best_metric': best_metric,
-                'best_metric_value': metrics[best_metric],
+                'best_metric_value': this_metric_value,
                 'epoch': cur_epoch,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
@@ -157,3 +159,4 @@ def do_eval(model, eval_loader, ckpt_path = None, loss_criterion = None):
     metrics['confusion_matrix'] = confusion_matrix_metric(pred_all, label_all).cpu().numpy()
     
     return loss, label_all, pred_all, output_all, metrics
+
