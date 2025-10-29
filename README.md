@@ -45,7 +45,7 @@ Follow the instructions below to build the environment
 1. Create and activate a new environment using conda
 
    ```bash
-   conda create -n breakhis python=3.9
+   conda create -n breakhis python=3.12
    conda activate breakhis
    ```
 
